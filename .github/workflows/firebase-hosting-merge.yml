@@ -1,0 +1,33 @@
+name: Deploy to Firebase Hosting on merge
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Cài đặt Flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # Tải thư viện
+      - run: flutter pub get
+
+      # Sinh code DI (QUAN TRỌNG cho injectable)
+      - run: dart run build_runner build --delete-conflicting-outputs
+
+      # Build Web Release
+      - run: flutter build web --release
+
+      # Deploy lên Firebase Live Channel
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_NOOK_IN }}'
+          channelId: live
+          projectId: nook-in

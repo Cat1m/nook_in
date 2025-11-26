@@ -1,0 +1,36 @@
+name: Deploy to Firebase Hosting on PR
+on: pull_request
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  build_and_preview:
+    # Chỉ chạy nếu PR đến từ chính repo này (bảo mật)
+    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Cài đặt Flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # Tải thư viện
+      - run: flutter pub get
+
+      # Sinh code DI (QUAN TRỌNG cho injectable)
+      - run: dart run build_runner build --delete-conflicting-outputs
+
+      # Build Web Release
+      - run: flutter build web --release
+
+      # Deploy lên kênh Preview (tạm thời)
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_NOOK_IN }}'
+          projectId: nook-in
