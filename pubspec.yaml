@@ -1,0 +1,99 @@
+name: nook_in
+description: "A beautiful Pomodoro timer with customizable ambient sounds and backgrounds"
+
+publish_to: 'none' 
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.1
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  flutter_bloc: ^9.1.1
+  bloc: ^9.1.0
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0
+  equatable: ^2.0.7
+  get_it: ^9.1.0
+  injectable: ^2.6.0
+  go_router: ^17.0.0
+  just_audio: ^0.10.5
+  flutter_timer_countdown: ^1.0.7
+  collection: ^1.19.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  build_runner: ^2.10.4
+  freezed: ^3.2.3
+  json_serializable: ^6.11.2
+  injectable_generator: ^2.9.1
+  flutter_gen_runner: ^5.12.0
+  custom_lint: ^0.8.1
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
+
+flutter:
+
+  uses-material-design: true
+  assets:
+    - assets/backgrounds/
+    - assets/sounds/
+
+# ================== Code Generation ==================
+flutter_gen:
+  output: lib/gen/
+  line_length: 80
+  
+  integrations:
+    flutter_svg: true
+    rive: true
+    lottie: true
+
+  assets:
+    enabled: true
+    # 👇 QUAN TRỌNG: Phải thêm dòng 'outputs:' và thụt lùi 2 dòng dưới vào trong
+    outputs: 
+      package_parameter_enabled: false
+      style: dot-delimiter
+    
+  colors:
+    enabled: false
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  

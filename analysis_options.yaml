@@ -1,0 +1,98 @@
+# 🎯 Nook In - Professional Lint Configuration
+# Based on: flutter_lints + custom strict rules
+
+# Kế thừa bộ rules chuẩn của Flutter team (chứa các rules cơ bản nhất)
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  # 🚫 Loại bỏ các file tự sinh (generated code) khỏi việc kiểm tra
+  # Lý do: Code này do máy sinh ra, thường vi phạm rules nhưng ta không sửa tay được.
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.config.dart"
+    - "lib/gen/**"
+    - "build/**"
+  
+  # 🔒 Chế độ "Siêu an toàn" (Strict Mode)
+  # Bật phần này giúp phát hiện lỗi tiềm ẩn do kiểu dữ liệu không rõ ràng (dynamic).
+  # Team lưu ý: Phải khai báo kiểu (int, String, Model...) rõ ràng, hạn chế dùng 'var' hoặc bỏ trống.
+  language:
+    strict-casts: true      # Báo lỗi khi ép kiểu ngầm định không an toàn
+    strict-inference: true  # Báo lỗi khi trình biên dịch không đoán được kiểu chính xác
+    strict-raw-types: true  # Báo lỗi khi dùng List, Map mà không định nghĩa kiểu <T> (VD: List thay vì List<int>)
+  
+  # ⚠️ Tùy chỉnh mức độ nghiêm trọng
+  errors:
+    # Coi những lỗi này là Error (đỏ lòm) để không build được app -> Bắt buộc phải sửa
+    missing_required_param: error    # Thiếu tham số required
+    missing_return: error            # Hàm có kiểu trả về nhưng quên return
+    must_be_immutable: error         # Widget trong Flutter phải là bất biến (final fields)
+    invalid_annotation_target: error # Dùng sai annotation (hay gặp với Freezed/JsonSerializable)
+    
+    # Coi những lỗi này là Warning (vàng)
+    todo: warning             # Nhắc nhở các task TODO còn sót lại
+    deprecated_member_use: warning # Cảnh báo khi dùng hàm cũ sắp bị xóa
+
+  plugins:
+    - custom_lint
+
+linter:
+  rules:
+    # ================== 🛡️ Error Prevention (Ngăn chặn lỗi logic/runtime) ==================
+    - always_use_package_imports # Dùng 'package:...' thay vì relative path '../' để tránh import trùng lặp class
+    - avoid_dynamic_calls        # Tránh gọi hàm trên biến dynamic (nguyên nhân hàng đầu gây crash app)
+    - avoid_empty_else           # Không viết khối else rỗng
+    - avoid_print                # ❌ Không dùng print() vì nó spam log hệ thống. Hãy dùng log/debugPrint
+    - cancel_subscriptions       # ⚠️ Bắt buộc hủy StreamSubscription để tránh rò rỉ bộ nhớ (Memory Leak)
+    - close_sinks                # Bắt buộc đóng Sink/StreamController khi không dùng
+    - control_flow_in_finally    # Không dùng break/continue trong khối finally (gây khó hiểu luồng chạy)
+    - empty_statements           # Tránh các dấu chấm phẩy ; thừa
+    - hash_and_equals            # Phải override cả hashcode và equals cùng lúc
+    - no_duplicate_case_values   # Tránh case trùng nhau trong switch
+    - no_logic_in_create_state   # State của StatefulWidget không được chứa logic phức tạp khi khởi tạo
+    - prefer_void_to_null        # Dùng void thay vì null cho Future không trả về giá trị
+    - throw_in_finally           # Không ném lỗi trong khối finally
+    - unnecessary_statements     # Code vô nghĩa, không có tác dụng
+    - unrelated_type_equality_checks # So sánh 2 kiểu không liên quan (VD: so sánh int == String -> luôn false)
+    - unsafe_html                # Tránh dùng HTML api không an toàn trên web
+    - valid_regexps              # Kiểm tra cú pháp Regex ngay lúc code
+    
+    # ================== 🎨 Style & Consistency (Code đẹp & Đồng bộ) ==================
+    
+    # --- 📝 Khai báo & Cú pháp ---
+    - always_declare_return_types # Bắt buộc khai báo kiểu trả về cho hàm (void, Widget, int...). Giúp code dễ đọc.
+    - always_put_required_named_parameters_first # Đưa tham số required lên đầu
+    - annotate_overrides          # Luôn thêm @override khi ghi đè hàm
+    - avoid_init_to_null          # Không cần gán = null (VD: String? a = null; -> thừa, vì mặc định là null rồi)
+    - avoid_redundant_argument_values # Không truyền giá trị mặc định nếu không cần thiết
+    - avoid_shadowing_type_parameters # Tránh đặt tên generic <T> trùng nhau gây nhầm lẫn
+    - camel_case_types            # Tên Class viết HoaChữCáiĐầu
+    - constant_identifier_names   # Hằng số (const) viết HOA_CACH_NHAU
+    - curly_braces_in_flow_control_structures # Luôn dùng {} cho if/else/for
+    - file_names                  # Tên file viết thuong_cach_duoi_nhu_nay.dart
+    - library_private_types_in_public_api # Không trả về class private (_Private) trong hàm public
+    - non_constant_identifier_names # Tên biến viết camelCase
+    - omit_local_variable_types   # (Tùy chọn) Không cần ghi kiểu cho biến cục bộ nếu compiler tự hiểu (var a = 10)
+    - prefer_final_fields         # Biến trong class nếu không đổi thì nên để final
+    - prefer_final_locals         # Biến cục bộ nếu không đổi thì nên để final (giúp code an toàn hơn)
+    - prefer_is_empty             # Dùng .isEmpty thay vì .length == 0 (nhanh hơn và dễ đọc hơn)
+    - prefer_is_not_empty         # Dùng .isNotEmpty thay vì .length > 0
+    - prefer_single_quotes        # Dùng dấu nháy đơn 'text' thay vì nháy kép "text" (trừ khi chuỗi có chứa nháy đơn)
+    
+    # --- 🚀 Flutter Specific (Tối ưu cho Flutter) ---
+    - avoid_unnecessary_containers # Đừng bọc Container nếu chỉ để padding/margin (dùng Padding/SizedBox rẻ hơn)
+    - await_only_futures          # Chỉ await những gì là Future
+    - prefer_const_constructors   # 🔥 CỰC QUAN TRỌNG: Dùng const bất cứ khi nào có thể. Giúp Flutter không phải vẽ lại Widget đó -> Tăng FPS.
+    - prefer_const_constructors_in_immutables
+    - prefer_const_literals_to_create_immutables
+    - require_trailing_commas     # 🔥 QUAN TRỌNG: Luôn để dấu phẩy cuối cùng trong danh sách tham số. Giúp Ctrl+S format code xuống dòng đẹp hơn.
+    - sized_box_for_whitespace    # Dùng SizedBox thay vì Container khi chỉ cần tạo khoảng trắng (hiệu năng cao hơn)
+    - sort_child_properties_last  # Thuộc tính 'child' hoặc 'children' nên để cuối cùng trong Widget (dễ nhìn cấu trúc cây)
+    - unawaited_futures           # ⚠️ Cảnh báo nếu gọi hàm async mà quên await (hoặc unawaited). Tránh lỗi logic chạy sai thứ tự.
+    - use_build_context_synchronously # ⚠️ Cảnh báo dùng BuildContext sau khi await (dễ gây crash nếu màn hình đã đóng). Cần check mounted.
+    - use_key_in_widget_constructors # Luôn khai báo Key cho Widget (cần thiết cho test và performance)
+
+    # ================== Disabled Rules (Đã tắt bớt cho đỡ gắt) ==================
+    # - lines_longer_than_80_chars  # Tắt vì màn hình giờ rộng, giới hạn 80 ký tự hơi tù túng
+    # - prefer_double_quotes        # Tắt vì team thống nhất dùng single quote
