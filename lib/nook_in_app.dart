@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'core/routing/app_router.dart';
-import 'core/theme/app_theme.dart';
+import 'package:nook_in/core/routing/app_router.dart';
+import 'package:nook_in/core/theme/app_theme.dart';
 
 class NookInApp extends StatelessWidget {
   const NookInApp({super.key});
@@ -15,7 +15,6 @@ class NookInApp extends StatelessWidget {
       // Theme
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
 
       // Routing
       routerConfig: appRouter,

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-// TODO: Import pages when created
-// import '../../features/home/presentation/pages/home_page.dart';
-// import '../../features/player/presentation/pages/player_page.dart';
+import 'package:nook_in/features/home/presentation/home_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -14,10 +11,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/',
       name: 'home',
-      builder: (context, state) {
-        // TODO: Replace with actual HomePage
-        return const Scaffold(body: Center(child: Text('Home Page - TODO')));
-      },
+      builder: (context, state) => const HomePage(),
     ),
 
     // 🎴 Play template by ID
