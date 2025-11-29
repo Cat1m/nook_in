@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:nook_in/core/services/audio_service.dart';
 import 'package:nook_in/features/timer/ticker.dart';
 
 import 'package:nook_in/features/timer/cubit/timer_state.dart';
@@ -8,17 +9,20 @@ import 'package:nook_in/features/timer/cubit/timer_state.dart';
 @injectable
 class TimerCubit extends Cubit<TimerState> {
   final Ticker _ticker;
+  final AudioService _audioService;
   StreamSubscription<int>? _tickerSubscription;
 
   // Mặc định 25 phút = 1500 giây
   static const int _defaultDuration = 25 * 60;
 
-  TimerCubit(this._ticker) : super(const TimerInitial(_defaultDuration));
+  TimerCubit(this._ticker, this._audioService)
+    : super(const TimerInitial(_defaultDuration));
 
   /// 1. Bắt đầu đếm (từ trạng thái Initial hoặc Resume từ Paused)
   void startTimer() {
     if (state is TimerRunning) return;
-
+    // Vừa kêu "Ting" một cái, vừa unlock Audio trên Web
+    _audioService.playStart();
     // Nếu đang Initial thì start mới, nếu đang Paused thì resume tiếp
     final duration = state.duration;
     final remaining = state is TimerPaused ? state.remaining : state.duration;
@@ -63,6 +67,7 @@ class TimerCubit extends Cubit<TimerState> {
         emit(TimerRunning(state.duration, duration));
       } else {
         _tickerSubscription?.cancel();
+        _audioService.playAlarm();
         emit(const TimerCompleted());
       }
     });

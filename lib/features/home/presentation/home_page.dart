@@ -1,18 +1,23 @@
-// lib/features/home/presentation/pages/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:nook_in/features/home/presentation/home_view.dart';
-import 'package:nook_in/features/timer/cubit/timer_cubit.dart'; // Đảm bảo import này
+import 'package:nook_in/features/mixer/cubit/mixer_cubit.dart';
+import 'package:nook_in/features/timer/cubit/timer_cubit.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      // Inject TimerCubit từ GetIt
-      create: (_) => GetIt.I<TimerCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        // 1. Timer Logic
+        BlocProvider(create: (_) => GetIt.I<TimerCubit>()),
+
+        // 2. Mixer Logic (Mới thêm)
+        BlocProvider(create: (_) => GetIt.I<MixerCubit>()),
+      ],
       child: const HomeView(),
     );
   }
