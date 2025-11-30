@@ -15,8 +15,8 @@ class $AssetsSoundsGen {
   /// File path: assets/sounds/camp_fire.m4a
   String get campFire => 'assets/sounds/camp_fire.m4a';
 
-  /// File path: assets/sounds/end_time.mp3
-  String get endTime => 'assets/sounds/end_time.mp3';
+  /// File path: assets/sounds/end_time.m4a
+  String get endTime => 'assets/sounds/end_time.m4a';
 
   /// File path: assets/sounds/raining.m4a
   String get raining => 'assets/sounds/raining.m4a';

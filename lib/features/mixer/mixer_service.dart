@@ -172,7 +172,6 @@ class MixerService {
     _previewTimers.clear();
 
     _activePreviewIds.clear();
-    // 👇 3. Emit rỗng để reset UI
     _previewIdsSubject.add({});
 
     if (isRunning) {
@@ -182,13 +181,17 @@ class MixerService {
           if (player.processingState == ProcessingState.completed) {
             await player.seek(Duration.zero);
           }
-          await player.play();
+          unawaited(player.play());
         }
       }
     } else {
-      for (var player in _players.values) {
-        if (player.playing) await player.pause();
-      }
+      // 1. Gom tất cả các lệnh pause cần thiết vào 1 danh sách
+      final pauseTasks = _players.values
+          .where((player) => player.playing)
+          .map((player) => player.pause());
+
+      // 2. Thực thi tất cả cùng 1 lúc và đợi tất cả xong
+      await Future.wait(pauseTasks);
     }
   }
 

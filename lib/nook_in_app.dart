@@ -14,7 +14,7 @@ class NookInApp extends StatelessWidget {
 
       // Theme
       theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      darkTheme: AppTheme.light,
 
       // Routing
       routerConfig: appRouter,
