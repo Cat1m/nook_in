@@ -1,76 +1,107 @@
-import 'dart:developer';
-
 import 'package:injectable/injectable.dart';
 import 'package:just_audio/just_audio.dart';
-
 import 'package:nook_in/features/mixer/sound_track.dart';
 
 @lazySingleton
 class MixerService {
   final Map<String, AudioPlayer> _players = {};
 
-  /// 1. Chỉ tải sound mặc định (Rain) và chờ nó xong
+  void _log(String message) {
+    print('🔴 [MIXER]: $message');
+  }
+
   Future<void> initDefault() async {
-    // Tìm sound mặc định (ví dụ Rain)
-    final defaultSound = SoundTrack.presets.firstWhere((s) => s.id == 'rain');
-    await _initializePlayer(defaultSound);
+    try {
+      final defaultSound = SoundTrack.presets.firstWhere((s) => s.id == 'rain');
+      await _initializePlayer(defaultSound);
+    } catch (e) {
+      _log('Error initDefault: $e');
+    }
   }
 
-  /// 2. Hàm tải lẻ từng sound (Dùng để tải nền)
   Future<void> loadSound(String id) async {
-    // Nếu đã có player rồi thì thôi
     if (_players.containsKey(id)) return;
-
-    final sound = SoundTrack.presets.firstWhere((s) => s.id == id);
-    await _initializePlayer(sound);
+    try {
+      final sound = SoundTrack.presets.firstWhere((s) => s.id == id);
+      await _initializePlayer(sound);
+    } catch (e) {
+      _log('Error loadSound $id: $e');
+    }
   }
 
-  /// Logic khởi tạo player chung
   Future<void> _initializePlayer(SoundTrack sound) async {
     final player = AudioPlayer();
     try {
-      _players[sound.id] = player; // Lưu instance trước
+      _players[sound.id] = player;
 
       await player.setAsset(sound.assetPath);
-      await player.setLoopMode(LoopMode.one);
+      await player.setLoopMode(LoopMode.one); // Set 1 lần là đủ
       await player.setVolume(0);
 
-      // Cài đặt "Cảnh sát Loop"
-      player.playerStateStream.listen((state) {
+      // 👇 CẢNH SÁT VỊ TRÍ (Manual Loop bằng cơm)
+      // Đây là giải pháp mạnh nhất cho Web: Tự check thời gian để tua lại
+      player.positionStream.listen((position) {
+        final duration = player.duration;
+        if (duration != null && player.playing) {
+          // Nếu vị trí hiện tại >= (Tổng thời gian - 300ms)
+          // Tức là sắp hết bài rồi -> Tua về đầu ngay lập tức
+          if (position.inMilliseconds >= duration.inMilliseconds - 300) {
+            // _log('${sound.id} -> Manual Loop Triggered!');
+            player.seek(Duration.zero);
+          }
+        }
+      });
+
+      // Vẫn giữ cảnh sát State để đề phòng
+      player.playerStateStream.listen((state) async {
         if (state.processingState == ProcessingState.completed &&
             player.volume > 0) {
-          player.seek(Duration.zero);
-          player.play();
+          _log('${sound.id} -> Completed detected -> Seek 0');
+          await player.seek(Duration.zero);
+          await player.play();
         }
       });
     } catch (e) {
-      log('Error loading sound ${sound.id}: $e');
-      _players.remove(sound.id); // Lỗi thì xóa đi để ko bị lỗi logic
+      _log('Error loading sound ${sound.id}: $e');
+      _players.remove(sound.id);
     }
   }
 
   Future<void> setVolume(String soundId, double volume) async {
     final player = _players[soundId];
-    if (player != null) {
-      try {
-        // Nếu kéo volume lên và player đang nghỉ (do chưa chạy hoặc bị dừng) -> Chạy ngay
-        if (volume > 0 && !player.playing) {
-          // Lưu ý: seek về 0 để chắc chắn không bị đứng ở cuối bài
+    if (player == null) return;
+
+    try {
+      // Lazy load check
+      if (player.duration == null) {
+        final sound = SoundTrack.presets.firstWhere((s) => s.id == soundId);
+        await player.setAsset(sound.assetPath);
+        await player.setLoopMode(LoopMode.one);
+      }
+
+      if (volume > 0) {
+        // 👇 BỎ Force Toggle Loop (Vì nó gây spam lệnh)
+        // Chỉ cần đảm bảo nó đang One là được
+        if (player.loopMode != LoopMode.one) {
+          await player.setLoopMode(LoopMode.one);
+        }
+
+        // Chỉ cần gọi play() là trình duyệt sẽ tỉnh ngủ (Wake lock)
+        if (!player.playing) {
           if (player.processingState == ProcessingState.completed) {
             await player.seek(Duration.zero);
           }
           await player.play();
         }
-
-        // Logic cũ: Pause nếu về 0 để tiết kiệm tài nguyên
-        if (volume == 0 && player.playing) {
-          await player.pause();
-        }
-
-        await player.setVolume(volume);
-      } catch (e) {
-        log('Lỗi khi chỉnh volume: $e');
       }
+
+      if (volume == 0 && player.playing) {
+        await player.pause();
+      }
+
+      await player.setVolume(volume);
+    } catch (e) {
+      _log('Lỗi setVolume $soundId: $e');
     }
   }
 
