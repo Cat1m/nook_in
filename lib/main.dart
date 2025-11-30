@@ -10,7 +10,7 @@ void main() async {
 
   // Initialize dependency injection
   await initializeDependencies();
-  await GetIt.I<MixerService>().init();
+  await GetIt.I<MixerService>().initDefault();
   // Run app
   runApp(const NookInApp());
 }

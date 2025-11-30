@@ -12,14 +12,14 @@
 class $AssetsSoundsGen {
   const $AssetsSoundsGen();
 
-  /// File path: assets/sounds/camp_fire.flac
-  String get campFire => 'assets/sounds/camp_fire.flac';
+  /// File path: assets/sounds/camp_fire.m4a
+  String get campFire => 'assets/sounds/camp_fire.m4a';
 
   /// File path: assets/sounds/end_time.mp3
   String get endTime => 'assets/sounds/end_time.mp3';
 
-  /// File path: assets/sounds/raining.flac
-  String get raining => 'assets/sounds/raining.flac';
+  /// File path: assets/sounds/raining.m4a
+  String get raining => 'assets/sounds/raining.m4a';
 
   /// File path: assets/sounds/start_time.mp3
   String get startTime => 'assets/sounds/start_time.mp3';

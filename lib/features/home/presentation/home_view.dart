@@ -81,10 +81,13 @@ class HomeView extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 12),
                           child: SoundVolumeSlider(
                             title: sound.name,
-                            iconPath: sound.assetPath, // Tạm dùng path làm key
+                            iconPath: sound.assetPath,
                             volume: currentVol,
+
+                            // Kiểm tra xem soundId có trong danh sách ready chưa
+                            isReady: state.readySoundIds.contains(sound.id),
+
                             onChanged: (newVol) {
-                              // Gọi Cubit để cập nhật volume
                               context.read<MixerCubit>().changeVolume(
                                 sound.id,
                                 newVol,

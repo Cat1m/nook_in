@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 
 class SoundVolumeSlider extends StatelessWidget {
   final String title;
-  final String
-  iconPath; // Nếu bạn chưa dùng svg/img thì có thể dùng IconData tạm
+  final String iconPath;
   final double volume;
+  final bool isReady; // 👇 MỚI: Biến nhận biết trạng thái
   final ValueChanged<double> onChanged;
 
   const SoundVolumeSlider({
     super.key,
     required this.title,
-    required this.iconPath, // Tạm thời mình sẽ hiển thị tên trước
+    required this.iconPath,
     required this.volume,
+    required this.isReady, // Thêm vào constructor
     required this.onChanged,
   });
 
@@ -21,36 +22,52 @@ class SoundVolumeSlider extends StatelessWidget {
       children: [
         Row(
           children: [
-            // Icon hoặc Tên Sound
+            // Title
             Expanded(
               flex: 2,
-              child: Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.w500),
+              child: Opacity(
+                // Làm mờ tên nếu chưa sẵn sàng
+                opacity: isReady ? 1.0 : 0.5,
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
               ),
             ),
-            // Slider điều chỉnh
+
+            // Slider hoặc Loading
             Expanded(
               flex: 5,
-              child: Slider(
-                value: volume,
-                min: 0.0,
-                max: 1.0,
-                // UI tinh tế: Nếu volume = 0 thì màu xám, > 0 thì màu chính
-                activeColor: volume > 0
-                    ? Theme.of(context).primaryColor
-                    : Colors.grey.shade400,
-                onChanged: onChanged,
-              ),
+              child: isReady
+                  ? Slider(
+                      value: volume,
+                      min: 0.0,
+                      max: 1.0,
+                      activeColor: volume > 0
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey.shade400,
+                      onChanged: onChanged,
+                    )
+                  : const Center(
+                      // Loading nhỏ xinh thay thế cho Slider
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
             ),
-            // Hiển thị % volume (Optional)
+
+            // Text % hoặc khoảng trống
             SizedBox(
               width: 40,
-              child: Text(
-                '${(volume * 100).toInt()}%',
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.end,
-              ),
+              child: isReady
+                  ? Text(
+                      '${(volume * 100).toInt()}%',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      textAlign: TextAlign.end,
+                    )
+                  : const SizedBox(), // Ẩn số % khi đang load
             ),
           ],
         ),

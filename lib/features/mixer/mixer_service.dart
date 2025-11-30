@@ -9,33 +9,43 @@ import 'package:nook_in/features/mixer/sound_track.dart';
 class MixerService {
   final Map<String, AudioPlayer> _players = {};
 
-  Future<void> init() async {
-    for (var sound in SoundTrack.presets) {
-      final player = AudioPlayer();
-      try {
-        // 1. Setup cơ bản
-        await player.setAsset(sound.assetPath);
-        await player.setLoopMode(LoopMode.one); // Hy vọng cái này chạy
-        await player.setVolume(0);
+  /// 1. Chỉ tải sound mặc định (Rain) và chờ nó xong
+  Future<void> initDefault() async {
+    // Tìm sound mặc định (ví dụ Rain)
+    final defaultSound = SoundTrack.presets.firstWhere((s) => s.id == 'rain');
+    await _initializePlayer(defaultSound);
+  }
 
-        // 2. 👇 THÊM "CẢNH SÁT" Ở ĐÂY:
-        // Lắng nghe trạng thái liên tục.
-        // Nếu lỡ LoopMode.one bị lỗi mà player chạy đến trạng thái 'completed' (dừng)
-        // Thì ta bắt nó tua lại và chạy tiếp ngay lập tức.
-        player.playerStateStream.listen((state) {
-          if (state.processingState == ProcessingState.completed) {
-            // Chỉ restart nếu volume đang mở (người dùng đang muốn nghe)
-            if (player.volume > 0) {
-              player.seek(Duration.zero);
-              player.play();
-            }
-          }
-        });
+  /// 2. Hàm tải lẻ từng sound (Dùng để tải nền)
+  Future<void> loadSound(String id) async {
+    // Nếu đã có player rồi thì thôi
+    if (_players.containsKey(id)) return;
 
-        _players[sound.id] = player;
-      } catch (e) {
-        log('Error loading sound ${sound.id}: $e');
-      }
+    final sound = SoundTrack.presets.firstWhere((s) => s.id == id);
+    await _initializePlayer(sound);
+  }
+
+  /// Logic khởi tạo player chung
+  Future<void> _initializePlayer(SoundTrack sound) async {
+    final player = AudioPlayer();
+    try {
+      _players[sound.id] = player; // Lưu instance trước
+
+      await player.setAsset(sound.assetPath);
+      await player.setLoopMode(LoopMode.one);
+      await player.setVolume(0);
+
+      // Cài đặt "Cảnh sát Loop"
+      player.playerStateStream.listen((state) {
+        if (state.processingState == ProcessingState.completed &&
+            player.volume > 0) {
+          player.seek(Duration.zero);
+          player.play();
+        }
+      });
+    } catch (e) {
+      log('Error loading sound ${sound.id}: $e');
+      _players.remove(sound.id); // Lỗi thì xóa đi để ko bị lỗi logic
     }
   }
 
