@@ -30,7 +30,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i187.MixerService>(() => _i187.MixerService());
     gh.factory<_i7.MixerCubit>(() => _i7.MixerCubit(gh<_i187.MixerService>()));
     gh.factory<_i553.TimerCubit>(
-      () => _i553.TimerCubit(gh<_i204.Ticker>(), gh<_i15.AudioService>()),
+      () => _i553.TimerCubit(
+        gh<_i204.Ticker>(),
+        gh<_i15.AudioService>(),
+        gh<_i187.MixerService>(),
+      ),
     );
     return this;
   }

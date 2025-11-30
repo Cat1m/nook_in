@@ -25,6 +25,7 @@ dependencies:
   just_audio: ^0.10.5
   flutter_timer_countdown: ^1.0.7
   collection: ^1.19.1
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:

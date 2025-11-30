@@ -93,6 +93,14 @@ class HomeView extends StatelessWidget {
                                 newVol,
                               );
                             },
+                            onPreview: () {
+                              context.read<MixerCubit>().togglePreview(
+                                sound.id,
+                              );
+                            },
+                            isPreviewing: state.previewingSoundIds.contains(
+                              sound.id,
+                            ),
                           ),
                         );
                       }).toList(),

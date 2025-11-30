@@ -1,21 +1,37 @@
+import 'dart:async';
+import 'dart:developer';
+import 'package:rxdart/rxdart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:just_audio/just_audio.dart';
+
 import 'package:nook_in/features/mixer/sound_track.dart';
 
 @lazySingleton
 class MixerService {
   final Map<String, AudioPlayer> _players = {};
+  bool _isTimerRunning = false;
 
-  void _log(String message) {
-    print('🔴 [MIXER]: $message');
-  }
+  // Timer cho preview
+  final Map<String, Timer> _previewTimers = {};
+
+  // 👇 2. Dùng BehaviorSubject thay vì StreamController
+  // .seeded({}) nghĩa là giá trị khởi tạo ban đầu là rỗng
+  final _previewIdsSubject = BehaviorSubject<Set<String>>.seeded({});
+
+  Stream<Set<String>> get previewIdsStream => _previewIdsSubject.stream;
+
+  // Biến nội bộ để thao tác cho dễ (giữ nguyên logic cũ)
+  final Set<String> _activePreviewIds = {};
 
   Future<void> initDefault() async {
     try {
       final defaultSound = SoundTrack.presets.firstWhere((s) => s.id == 'rain');
       await _initializePlayer(defaultSound);
+      if (_players.containsKey('rain')) {
+        await _players['rain']!.setVolume(0.3);
+      }
     } catch (e) {
-      _log('Error initDefault: $e');
+      log('Error initDefault: $e');
     }
   }
 
@@ -25,7 +41,7 @@ class MixerService {
       final sound = SoundTrack.presets.firstWhere((s) => s.id == id);
       await _initializePlayer(sound);
     } catch (e) {
-      _log('Error loadSound $id: $e');
+      log('Error loadSound $id: $e');
     }
   }
 
@@ -33,81 +49,158 @@ class MixerService {
     final player = AudioPlayer();
     try {
       _players[sound.id] = player;
-
       await player.setAsset(sound.assetPath);
-      await player.setLoopMode(LoopMode.one); // Set 1 lần là đủ
-      await player.setVolume(0);
+      await player.setLoopMode(LoopMode.one);
+      await player.setVolume(0); // Mặc định im lặng
 
-      // 👇 CẢNH SÁT VỊ TRÍ (Manual Loop bằng cơm)
-      // Đây là giải pháp mạnh nhất cho Web: Tự check thời gian để tua lại
+      // Cảnh sát vị trí (Giữ nguyên logic bất tử này)
       player.positionStream.listen((position) {
         final duration = player.duration;
         if (duration != null && player.playing) {
-          // Nếu vị trí hiện tại >= (Tổng thời gian - 300ms)
-          // Tức là sắp hết bài rồi -> Tua về đầu ngay lập tức
           if (position.inMilliseconds >= duration.inMilliseconds - 300) {
-            // _log('${sound.id} -> Manual Loop Triggered!');
             player.seek(Duration.zero);
           }
         }
       });
 
-      // Vẫn giữ cảnh sát State để đề phòng
       player.playerStateStream.listen((state) async {
         if (state.processingState == ProcessingState.completed &&
             player.volume > 0) {
-          _log('${sound.id} -> Completed detected -> Seek 0');
           await player.seek(Duration.zero);
           await player.play();
         }
       });
     } catch (e) {
-      _log('Error loading sound ${sound.id}: $e');
+      log('Error loading sound ${sound.id}: $e');
       _players.remove(sound.id);
     }
   }
 
+  // 👇 HÀM 1: CHỈ CHỈNH VOLUME (Cực gọn)
   Future<void> setVolume(String soundId, double volume) async {
     final player = _players[soundId];
     if (player == null) return;
 
-    try {
-      // Lazy load check
-      if (player.duration == null) {
-        final sound = SoundTrack.presets.firstWhere((s) => s.id == soundId);
-        await player.setAsset(sound.assetPath);
-        await player.setLoopMode(LoopMode.one);
-      }
+    // Lazy load nếu chưa có
+    if (player.duration == null) {
+      final sound = SoundTrack.presets.firstWhere((s) => s.id == soundId);
+      await player.setAsset(sound.assetPath);
+      await player.setLoopMode(LoopMode.one);
+    }
 
-      if (volume > 0) {
-        // 👇 BỎ Force Toggle Loop (Vì nó gây spam lệnh)
-        // Chỉ cần đảm bảo nó đang One là được
-        if (player.loopMode != LoopMode.one) {
-          await player.setLoopMode(LoopMode.one);
+    await player.setVolume(volume);
+
+    // Nếu Timer Chính đang chạy -> Thì chỉnh volume phải có tác dụng ngay (Pause/Play)
+    if (_isTimerRunning) {
+      if (volume > 0 && !player.playing) {
+        if (player.processingState == ProcessingState.completed) {
+          await player.seek(Duration.zero);
         }
+        await player.play();
+      } else if (volume == 0 && player.playing) {
+        await player.pause();
+      }
+    }
+    // Nếu Timer đang tắt -> setVolume KHÔNG LÀM GÌ CẢ (Chỉ lưu giá trị volume đó thôi)
+  }
 
-        // Chỉ cần gọi play() là trình duyệt sẽ tỉnh ngủ (Wake lock)
-        if (!player.playing) {
+  Future<void> togglePreview(String soundId) async {
+    final player = _players[soundId];
+    if (player == null) return;
+    if (_isTimerRunning) return;
+
+    if (_activePreviewIds.contains(soundId)) {
+      // --- TRƯỜNG HỢP TẮT ---
+
+      // 1. Cập nhật danh sách ngay lập tức
+      _activePreviewIds.remove(soundId);
+      // 👇 QUAN TRỌNG: Tạo Set mới để Bloc nhận diện sự thay đổi
+      _previewIdsSubject.add(Set.from(_activePreviewIds));
+
+      // 2. Xử lý Logic (Hủy timer, dừng nhạc)
+      _previewTimers[soundId]?.cancel();
+      _previewTimers.remove(soundId);
+
+      await player.pause();
+      await player.seek(Duration.zero);
+    } else {
+      // --- TRƯỜNG HỢP BẬT ---
+
+      // 1. Cập nhật danh sách NGAY LẬP TỨC (Optimistic UI)
+      // Để icon đổi thành Pause ngay khi chạm tay, không cần chờ nhạc load
+      _activePreviewIds.add(soundId);
+      // 👇 QUAN TRỌNG: Tạo Set mới
+      _previewIdsSubject.add(Set.from(_activePreviewIds));
+
+      // 2. Setup Timer ngay (Không chờ play)
+      _previewTimers[soundId]?.cancel();
+      _previewTimers[soundId] = Timer(const Duration(seconds: 7), () async {
+        if (!_isTimerRunning && player.playing) {
+          await player.pause();
+          await player.seek(Duration.zero);
+
+          // Hết giờ -> Xóa khỏi list và báo cáo
+          _activePreviewIds.remove(soundId);
+          // 👇 QUAN TRỌNG: Tạo Set mới
+          _previewIdsSubject.add(Set.from(_activePreviewIds));
+        }
+        _previewTimers.remove(soundId);
+      });
+
+      // 3. Bây giờ mới xử lý Audio (Nặng nề để sau cùng)
+      try {
+        if (player.volume == 0) await player.setVolume(0.3);
+        if (player.processingState == ProcessingState.completed) {
+          await player.seek(Duration.zero);
+        }
+        await player.play();
+      } catch (e) {
+        // Nếu lỡ play lỗi thì phải revert lại UI
+        log('Lỗi play preview: $e');
+        _activePreviewIds.remove(soundId);
+        _previewIdsSubject.add(Set.from(_activePreviewIds));
+      }
+    }
+  }
+
+  Future<void> setTimerStatus(bool isRunning) async {
+    _isTimerRunning = isRunning;
+    // Hủy hết preview nếu Timer chính bắt đầu chạy
+    for (var timer in _previewTimers.values) {
+      timer.cancel();
+    }
+    _previewTimers.clear();
+
+    _activePreviewIds.clear();
+    // 👇 3. Emit rỗng để reset UI
+    _previewIdsSubject.add({});
+
+    if (isRunning) {
+      for (var player in _players.values) {
+        if (player.volume > 0) {
+          // Chỉ phát những sound có volume
           if (player.processingState == ProcessingState.completed) {
             await player.seek(Duration.zero);
           }
           await player.play();
         }
       }
-
-      if (volume == 0 && player.playing) {
-        await player.pause();
+    } else {
+      for (var player in _players.values) {
+        if (player.playing) await player.pause();
       }
-
-      await player.setVolume(volume);
-    } catch (e) {
-      _log('Lỗi setVolume $soundId: $e');
     }
   }
 
+  // ... Dispose giữ nguyên
   void dispose() {
-    for (var player in _players.values) {
-      player.dispose();
+    _previewIdsSubject.close(); // Quan trọng
+    for (var t in _previewTimers.values) {
+      t.cancel();
+    }
+    _previewTimers.clear();
+    for (var p in _players.values) {
+      p.dispose();
     }
     _players.clear();
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:injectable/injectable.dart';
@@ -7,20 +9,29 @@ import 'package:nook_in/features/mixer/sound_track.dart';
 // --- STATE ---
 class MixerState extends Equatable {
   final Map<String, double> volumes;
-  final Set<String> readySoundIds; // 👇 MỚI: Danh sách sound đã tải xong
+  final Set<String> readySoundIds;
 
-  const MixerState({this.volumes = const {}, this.readySoundIds = const {}});
+  // 👇 THAY ĐỔI: Dùng Set thay vì String?
+  final Set<String> previewingSoundIds;
+
+  const MixerState({
+    this.volumes = const {},
+    this.readySoundIds = const {},
+    this.previewingSoundIds = const {}, // Mặc định rỗng
+  });
 
   @override
-  List<Object> get props => [volumes, readySoundIds];
+  List<Object> get props => [volumes, readySoundIds, previewingSoundIds];
 
   MixerState copyWith({
     Map<String, double>? volumes,
     Set<String>? readySoundIds,
+    Set<String>? previewingSoundIds,
   }) {
     return MixerState(
       volumes: volumes ?? this.volumes,
       readySoundIds: readySoundIds ?? this.readySoundIds,
+      previewingSoundIds: previewingSoundIds ?? this.previewingSoundIds,
     );
   }
 }
@@ -29,10 +40,17 @@ class MixerState extends Equatable {
 @injectable
 class MixerCubit extends Cubit<MixerState> {
   final MixerService _mixerService;
+  StreamSubscription? _previewSubscription;
 
   // Khi khởi tạo Cubit, ta bắt đầu quy trình tải luôn
-  MixerCubit(this._mixerService) : super(const MixerState()) {
+  MixerCubit(this._mixerService)
+    : super(const MixerState(volumes: {'rain': 0.3})) {
     _startBackgroundLoading();
+
+    // 👇 Lắng nghe Set<String> từ Service
+    _previewSubscription = _mixerService.previewIdsStream.listen((ids) {
+      emit(state.copyWith(previewingSoundIds: ids));
+    });
   }
 
   void _startBackgroundLoading() async {
@@ -62,5 +80,16 @@ class MixerCubit extends Cubit<MixerState> {
     final currentVolumes = Map<String, double>.from(state.volumes);
     currentVolumes[soundId] = newVolume;
     emit(state.copyWith(volumes: currentVolumes));
+  }
+
+  void togglePreview(String soundId) {
+    if (!state.readySoundIds.contains(soundId)) return;
+    _mixerService.togglePreview(soundId);
+  }
+
+  @override
+  Future<void> close() {
+    _previewSubscription?.cancel();
+    return super.close();
   }
 }

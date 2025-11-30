@@ -4,16 +4,19 @@ class SoundVolumeSlider extends StatelessWidget {
   final String title;
   final String iconPath;
   final double volume;
-  final bool isReady; // 👇 MỚI: Biến nhận biết trạng thái
+  final bool isReady;
   final ValueChanged<double> onChanged;
+  final VoidCallback onPreview; // 👇 Callback mới cho nút Preview
+  final bool isPreviewing;
 
   const SoundVolumeSlider({
-    super.key,
     required this.title,
     required this.iconPath,
     required this.volume,
-    required this.isReady, // Thêm vào constructor
+    required this.isReady,
     required this.onChanged,
+    required this.onPreview, // Nhớ thêm vào constructor, super.key,
+    required this.isPreviewing,
   });
 
   @override
@@ -26,30 +29,28 @@ class SoundVolumeSlider extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Opacity(
-                // Làm mờ tên nếu chưa sẵn sàng
                 opacity: isReady ? 1.0 : 0.5,
                 child: Text(
                   title,
                   style: const TextStyle(fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
 
-            // Slider hoặc Loading
+            // Slider
             Expanded(
               flex: 5,
               child: isReady
                   ? Slider(
                       value: volume,
-                      min: 0.0,
-                      max: 1.0,
                       activeColor: volume > 0
                           ? Theme.of(context).primaryColor
                           : Colors.grey.shade400,
-                      onChanged: onChanged,
+                      onChanged:
+                          onChanged, // Kéo slider chỉ chỉnh volume, ko phát nhạc
                     )
                   : const Center(
-                      // Loading nhỏ xinh thay thế cho Slider
                       child: SizedBox(
                         width: 20,
                         height: 20,
@@ -58,16 +59,26 @@ class SoundVolumeSlider extends StatelessWidget {
                     ),
             ),
 
-            // Text % hoặc khoảng trống
+            // 👇 Nút Preview Mới
             SizedBox(
-              width: 40,
+              width: 48,
               child: isReady
-                  ? Text(
-                      '${(volume * 100).toInt()}%',
-                      style: Theme.of(context).textTheme.bodySmall,
-                      textAlign: TextAlign.end,
+                  ? IconButton(
+                      // Logic đổi icon: Đang preview thì hiện Pause, không thì hiện Play
+                      icon: Icon(
+                        isPreviewing
+                            ? Icons.pause_circle_outline
+                            : Icons.play_circle_outline,
+                        size: 28,
+                        // Đổi màu để nổi bật hơn khi đang chạy
+                        color: isPreviewing
+                            ? Theme.of(context).primaryColor
+                            : Colors.grey.shade600,
+                      ),
+                      tooltip: isPreviewing ? 'Dừng nghe thử' : 'Nghe thử',
+                      onPressed: onPreview,
                     )
-                  : const SizedBox(), // Ẩn số % khi đang load
+                  : const SizedBox(),
             ),
           ],
         ),
