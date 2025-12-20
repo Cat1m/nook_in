@@ -71,7 +71,9 @@ class HomeView extends StatelessWidget {
                     // --- PHẦN MIXER (Mới thêm) ---
                     Text(
                       'Sound Mixer',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleMedium!.copyWith(color: Colors.white),
                     ),
                     const SizedBox(height: 16),
 

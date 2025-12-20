@@ -95,7 +95,7 @@ class BackgroundCubit extends Cubit<BackgroundState> {
       );
     }
 
-    _slideshowTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    _slideshowTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (_staticImages.isEmpty) return;
       index = (index + 1) % _staticImages.length;
       emit(

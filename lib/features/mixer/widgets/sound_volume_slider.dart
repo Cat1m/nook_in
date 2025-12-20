@@ -32,7 +32,10 @@ class SoundVolumeSlider extends StatelessWidget {
                 opacity: isReady ? 1.0 : 0.5,
                 child: Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

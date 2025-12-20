@@ -19,6 +19,7 @@ class TimerDisplay extends StatelessWidget {
       style: Theme.of(context).textTheme.displayLarge?.copyWith(
         fontSize: 80,
         fontWeight: FontWeight.bold,
+        color: Colors.white,
         fontFeatures: [
           const FontFeature.tabularFigures(),
         ], // Giữ số không bị nhảy

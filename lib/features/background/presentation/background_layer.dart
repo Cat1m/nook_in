@@ -11,7 +11,7 @@ class BackgroundLayer extends StatelessWidget {
     return BlocBuilder<BackgroundCubit, BackgroundState>(
       builder: (context, state) {
         return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 1000),
+          duration: const Duration(seconds: 1),
           child: state.isVideo
               // Nếu là Live Wallpaper
               ? LiveWallpaperPlayer(
