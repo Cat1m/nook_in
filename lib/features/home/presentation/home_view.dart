@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nook_in/features/background/cubit/background_cubit.dart';
 import 'package:nook_in/features/background/presentation/background_layer.dart';
+import 'package:nook_in/features/home/presentation/widget/background_menu_button.dart';
 import 'package:nook_in/features/home/presentation/widget/duration_picker.dart';
 import 'package:nook_in/features/home/presentation/widget/timer_controls.dart';
 import 'package:nook_in/features/home/presentation/widget/timer_display.dart';
@@ -65,15 +66,13 @@ class HomeView extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 60),
-                    const Divider(),
+                    const GlassDivider(),
                     const SizedBox(height: 24),
 
                     // --- PHẦN MIXER (Mới thêm) ---
-                    Text(
-                      'Sound Mixer',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleMedium!.copyWith(color: Colors.white),
+                    const GlassSectionHeader(
+                      title: 'Sound Mixer',
+                      icon: Icons.music_note_rounded, // Optional
                     ),
                     const SizedBox(height: 16),
 
@@ -122,61 +121,7 @@ class HomeView extends StatelessWidget {
             ),
           ),
 
-          // 3. Menu Button Thay đổi hình nền
-          Positioned(
-            top: 16,
-            right: 16,
-            child: SafeArea(
-              child: PopupMenuButton<BackgroundMode>(
-                icon: const Icon(Icons.wallpaper, color: Colors.white70),
-                tooltip: 'Đổi hình nền',
-                onSelected: (mode) {
-                  if (mode == BackgroundMode.custom) {
-                    // TODO: Mở dialog custom (Làm sau)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Tính năng Custom đang phát triển!'),
-                      ),
-                    );
-                  } else {
-                    context.read<BackgroundCubit>().setMode(mode);
-                  }
-                },
-                itemBuilder: (BuildContext context) =>
-                    <PopupMenuEntry<BackgroundMode>>[
-                      const PopupMenuItem<BackgroundMode>(
-                        value: BackgroundMode.static,
-                        child: ListTile(
-                          leading: Icon(Icons.image),
-                          title: Text('Ảnh tĩnh (Random)'),
-                        ),
-                      ),
-                      const PopupMenuItem<BackgroundMode>(
-                        value: BackgroundMode.slideshow,
-                        child: ListTile(
-                          leading: Icon(Icons.slideshow),
-                          title: Text('Slideshow (Tự động)'),
-                        ),
-                      ),
-                      const PopupMenuItem<BackgroundMode>(
-                        value: BackgroundMode.live,
-                        child: ListTile(
-                          leading: Icon(Icons.movie_filter),
-                          title: Text('Live Wallpaper'),
-                        ),
-                      ),
-                      const PopupMenuDivider(),
-                      const PopupMenuItem<BackgroundMode>(
-                        value: BackgroundMode.custom,
-                        child: ListTile(
-                          leading: Icon(Icons.add_photo_alternate),
-                          title: Text('Custom (Sắp ra mắt)'),
-                        ),
-                      ),
-                    ],
-              ),
-            ),
-          ),
+          const BackgroundMenuButton(),
         ],
       ),
     );

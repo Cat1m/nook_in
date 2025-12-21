@@ -33,11 +33,14 @@ class $AssetsSoundsGen {
   /// File path: assets/sounds/raining.m4a
   String get raining => 'assets/sounds/raining.m4a';
 
+  /// File path: assets/sounds/raining_2.m4a
+  String get raining2 => 'assets/sounds/raining_2.m4a';
+
   /// File path: assets/sounds/start_time.mp3
   String get startTime => 'assets/sounds/start_time.mp3';
 
   /// List of all assets
-  List<String> get values => [campFire, endTime, raining, startTime];
+  List<String> get values => [campFire, endTime, raining, raining2, startTime];
 }
 
 class $AssetsBackgroundsLiveGen {

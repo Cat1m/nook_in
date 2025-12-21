@@ -20,7 +20,7 @@ class SoundTrack {
     SoundTrack(
       id: 'rain',
       name: 'Summer Rain',
-      assetPath: Assets.sounds.raining, // Lấy từ flutter_gen
+      assetPath: Assets.sounds.raining2, // Lấy từ flutter_gen
     ),
     SoundTrack(
       id: 'fire',
